@@ -1,0 +1,73 @@
+import React from 'react';
+import type { GameState, Mood } from '../types';
+
+interface DevToolsProps {
+    setGameState: React.Dispatch<React.SetStateAction<GameState>>;
+    onTestReminder: () => void;
+    onForceReminder: () => void;
+    playGulp: () => void;
+    playCelebrate: () => void;
+    playEat: () => void;
+}
+
+const PxButton: React.FC<{ onClick: () => void; children: React.ReactNode }> = ({ onClick, children }) => (
+    <button 
+        className="text-xs p-2 cursor-pointer bg-black border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2),_0_6px_0_#000] text-[#ffd12b] font-bold text-center rounded active:translate-y-0.5"
+        onClick={onClick}
+    >
+        {children}
+    </button>
+);
+
+export const DevTools: React.FC<DevToolsProps> = ({ setGameState, onTestReminder, onForceReminder, playGulp, playCelebrate, playEat }) => {
+    
+    const handleReset = () => {
+        setGameState(prev => ({
+            ...prev,
+            ml: 0,
+            entries: [],
+            celebratedToday: false,
+            moodOverride: null,
+            bubbles: []
+        }));
+    };
+
+    const handleUndo = () => {
+        setGameState(prev => {
+            if (prev.entries.length === 0) return prev;
+            const lastEntry = prev.entries[prev.entries.length - 1];
+            return {
+                ...prev,
+                ml: Math.max(0, prev.ml - lastEntry.amount),
+                entries: prev.entries.slice(0, -1),
+                celebratedToday: false,
+            };
+        });
+    };
+    
+    const handleNextMood = () => {
+        setGameState(prev => {
+            const moods: (Mood | null)[] = ['happy', 'ok', 'sick', 'sos', null];
+            const currentIndex = moods.indexOf(prev.moodOverride);
+            const nextIndex = (currentIndex + 1) % moods.length;
+            return { ...prev, moodOverride: moods[nextIndex] };
+        });
+    };
+
+    return (
+        <div className="bg-[#0d1a2c] border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2)] rounded-md p-2.5">
+            <h3 className="m-0 mb-2 text-xs text-[--aqua] tracking-wider">DEV • TEST</h3>
+            <div className="grid grid-cols-2 gap-2">
+                <PxButton onClick={handleUndo}>UNDO</PxButton>
+                <PxButton onClick={handleReset}>RESET TODAY</PxButton>
+                <PxButton onClick={onTestReminder}>TEST TOAST</PxButton>
+                <PxButton onClick={onForceReminder}>FORCE REMINDER</PxButton>
+                <PxButton onClick={handleNextMood}>NEXT MOOD</PxButton>
+                <PxButton onClick={playGulp}>AUDIO: GULP</PxButton>
+                <PxButton onClick={playCelebrate}>AUDIO: CELEBRATE</PxButton>
+                <PxButton onClick={playEat}>AUDIO: EAT</PxButton>
+            </div>
+            <div className="text-[--muted] text-[11px] mt-2">Tests: A-OK</div>
+        </div>
+    );
+};

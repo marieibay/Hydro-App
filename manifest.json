@@ -1,0 +1,21 @@
+{
+  "short_name": "HydroPet",
+  "name": "HydroPet",
+  "description": "A fun, retro-style game where you keep a pixel pet healthy by tracking your daily water intake!",
+  "icons": [
+    {
+      "src": "icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0b1220",
+  "background_color": "#0a0f1a"
+}
