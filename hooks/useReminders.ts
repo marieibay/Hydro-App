@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback } from 'react';
 import type { GameState, ReminderSettings, Entry } from '../types';
 import { todayKey } from '../types';
@@ -123,9 +124,5 @@ export const useReminders = (
 
     }, [gameState.notificationPermission, setGameState, showToast]);
 
-    const forceReminder = useCallback(() => {
-        sendReminder(true);
-    }, [sendReminder]);
-
-    return { requestPermissionAndSaveReminders, forceReminder };
+    return { requestPermissionAndSaveReminders };
 };

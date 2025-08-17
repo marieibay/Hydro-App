@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Cabinet } from './components/Cabinet';
-import { DevTools } from './components/DevTools';
 import { SetupPanel } from './components/SetupPanel';
 import { Celebration } from './components/Celebration';
 import { OverGoal } from './components/OverGoal';
@@ -86,7 +85,7 @@ const App: React.FC = () => {
         setTimeout(() => setToastMessage(''), 3000);
     }, [playToast]);
 
-    const { requestPermissionAndSaveReminders, forceReminder } = useReminders(gameState, setGameState, showToast);
+    const { requestPermissionAndSaveReminders } = useReminders(gameState, setGameState, showToast);
 
     const lastTimeRef = useRef(performance.now());
     const gameScreenRef = useRef<HTMLDivElement>(null);
@@ -239,7 +238,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="stage font-press-start grid grid-cols-1 md:grid-cols-[1fr,min(260px,38vw)] gap-3 w-full max-w-[1100px]">
+        <div className="stage font-press-start flex justify-center w-full">
             <main>
                 <Cabinet
                     gameState={gameState}
@@ -254,16 +253,6 @@ const App: React.FC = () => {
                     unlockAudio={unlockAudio}
                 />
             </main>
-            <aside className="hidden md:block">
-                <DevTools
-                    setGameState={setGameState}
-                    onTestReminder={() => showToast('Time for some water!')}
-                    onForceReminder={forceReminder}
-                    playGulp={playGulp}
-                    playCelebrate={() => { setCelebrating(true); playCelebrate(); }}
-                    playEat={playEat}
-                />
-            </aside>
             {isSetupOpen && (
                 <SetupPanel
                     onClose={() => setSetupOpen(false)}
