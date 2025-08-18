@@ -136,6 +136,7 @@ const App: React.FC = () => {
     const { requestPermissionAndSaveReminders, forceReminder } = useReminders(gameState, setGameState, showToast);
 
     const lastTimeRef = useRef(performance.now());
+    const animationFrameId = useRef<number | null>(null);
     const gameScreenRef = useRef<HTMLDivElement>(null);
 
     // Save state to localStorage
@@ -174,48 +175,55 @@ const App: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [gameState.date, gameState.settings]);
     
-    // Fix for physics bugs when tab is backgrounded
-    useEffect(() => {
-        const handleVisibilityChange = () => {
-            // When the page becomes visible again, reset the time reference
-            // to avoid a large 'dt' jump which can cause physics glitches.
-            if (document.visibilityState === 'visible') {
-                lastTimeRef.current = performance.now();
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, []);
-
     const goalToday = useCallback(() => {
         return gameState.settings.useCustomGoal ? gameState.goalBase : 2000;
     }, [gameState.settings.useCustomGoal, gameState.goalBase]);
 
     const currentMood = getMood(gameState, goalToday());
 
-    // Game Loop
+    // Game Loop with robust pause/resume on tab visibility change
     useEffect(() => {
-        let animationFrameId: number;
-        
         const loop = (timestamp: number) => {
             const dt = Math.min(0.033, (timestamp - lastTimeRef.current) / 1000);
             lastTimeRef.current = timestamp;
-            
+
             updateFishLogic(setGameState, gameScreenRef, dt, getMood, goalToday, playEat, playPlop);
-            
-            animationFrameId = requestAnimationFrame(loop);
+
+            animationFrameId.current = requestAnimationFrame(loop);
         };
 
-        animationFrameId = requestAnimationFrame(loop);
+        const startLoop = () => {
+            if (animationFrameId.current === null) {
+                lastTimeRef.current = performance.now(); // Reset time right before starting
+                animationFrameId.current = requestAnimationFrame(loop);
+            }
+        };
+
+        const stopLoop = () => {
+            if (animationFrameId.current !== null) {
+                cancelAnimationFrame(animationFrameId.current);
+                animationFrameId.current = null;
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                startLoop();
+            } else {
+                stopLoop();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        startLoop(); // Initial start
 
         return () => {
-            cancelAnimationFrame(animationFrameId);
+            stopLoop(); // Cleanup on component unmount
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [goalToday, playEat, playPlop, setGameState]);
+
 
     // Check for goal achievement
     useEffect(() => {
