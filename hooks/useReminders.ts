@@ -1,4 +1,3 @@
-
 import { useEffect, useCallback } from 'react';
 import type { GameState, ReminderSettings, Entry } from '../types';
 import { todayKey } from '../types';
@@ -50,6 +49,16 @@ export const useReminders = (
         
         if (gameState.notificationPermission === 'granted' && 'serviceWorker' in navigator) {
              navigator.serviceWorker.ready.then(registration => {
+                if (!registration.active) {
+                    // Service worker is not active, fall back to a toast
+                    console.warn("Service worker not active, falling back to toast for reminder.");
+                    showToast(reminderText); // Show toast as fallback
+                    if (!force) {
+                        setGameState(prev => ({ ...prev, lastReminderTimestamp: Date.now() }));
+                    }
+                    return;
+                }
+
                 const notificationOptions = {
                     body: reminderText,
                     icon: '/icon-192x192.png',
@@ -57,9 +66,7 @@ export const useReminders = (
                     tag: 'hydropet-reminder' // Use a tag to prevent stacking notifications
                 };
                 
-                // This sends a message to the service worker for client-side triggered notifications.
-                // This is great for testing or in-app reminders.
-                registration.active?.postMessage({
+                registration.active.postMessage({
                     type: 'show-notification',
                     title: 'HydroPet Reminder',
                     options: notificationOptions,
@@ -70,8 +77,11 @@ export const useReminders = (
                 }
              }).catch(err => {
                  console.error("Error sending message to service worker:", err);
-                 // Fallback to toast if service worker messaging fails
-                 if (force) showToast(reminderText);
+                 // Fallback to toast if service worker messaging fails for any other reason
+                 showToast(reminderText);
+                 if (!force) {
+                    setGameState(prev => ({ ...prev, lastReminderTimestamp: Date.now() }));
+                 }
              });
         } else {
             // If permission isn't granted, or for testing, show a toast.
