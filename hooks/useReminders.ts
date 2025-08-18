@@ -34,10 +34,12 @@ export const useReminders = (
         
         if (gameState.notificationPermission === 'granted') {
             navigator.serviceWorker.ready.then(registration => {
-                registration.showNotification('HydroPet Reminder', {
+                const notificationOptions = {
                     body: reminderText,
-                    // You would add icon paths here, e.g., icon: '/icon-192x192.png'
-                });
+                    icon: '/icon-192x192.png',
+                    vibrate: [200, 100, 200],
+                };
+                registration.showNotification('HydroPet Reminder', notificationOptions);
                 if (!force) {
                     setGameState(prev => ({ ...prev, lastReminderTimestamp: Date.now() }));
                 }
@@ -52,8 +54,12 @@ export const useReminders = (
     // 2. Set up a timer to check if a reminder is due
     useEffect(() => {
         const intervalId = setInterval(() => {
-            const { settings, entries, lastReminderTimestamp, notificationPermission } = gameState;
+            const { settings, entries, lastReminderTimestamp, notificationPermission, ml } = gameState;
             const { reminders } = settings;
+            
+            // Don't remind if goal is met
+            const goal = settings.useCustomGoal ? gameState.goalBase : 2000;
+            if(ml >= goal) return;
             
             // Check if reminders are enabled by the user (interval > 0)
             if (reminders.intervalMin <= 0) return;
@@ -124,5 +130,9 @@ export const useReminders = (
 
     }, [gameState.notificationPermission, setGameState, showToast]);
 
-    return { requestPermissionAndSaveReminders };
+    const forceReminder = useCallback(() => {
+        sendReminder(true);
+    }, [sendReminder]);
+
+    return { requestPermissionAndSaveReminders, forceReminder };
 };

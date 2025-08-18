@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { GameState, ShiftMode, ReminderSettings } from '../types';
 import { todayKey } from '../types';
+import { DevTools } from './DevTools';
 
 interface SetupPanelProps {
     onClose: () => void;
@@ -9,9 +10,13 @@ interface SetupPanelProps {
     setGameState: React.Dispatch<React.SetStateAction<GameState>>;
     showToast: (message: string) => void;
     onSaveReminders: (settings: ReminderSettings) => void;
+    onForceReminder: () => void;
+    playGulp: () => void;
+    playCelebrate: () => void;
+    playEat: () => void;
 }
 
-type Tab = 'stats' | 'reminders' | 'mode' | 'goal';
+type Tab = 'stats' | 'reminders' | 'mode' | 'goal' | 'dev';
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode; className?: string }> = ({ active, onClick, children, className }) => (
     <button
@@ -279,8 +284,9 @@ const GoalTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'sh
     );
 };
 
-export const SetupPanel: React.FC<SetupPanelProps> = ({ onClose, gameState, setGameState, showToast, onSaveReminders }) => {
+export const SetupPanel: React.FC<SetupPanelProps> = (props) => {
     const [activeTab, setActiveTab] = useState<Tab>('stats');
+    const { onClose, gameState, setGameState, showToast, onSaveReminders, onForceReminder, playGulp, playCelebrate, playEat } = props;
     
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md z-50 p-4">
@@ -290,6 +296,7 @@ export const SetupPanel: React.FC<SetupPanelProps> = ({ onClose, gameState, setG
                     <TabButton active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')}>REMINDERS</TabButton>
                     <TabButton active={activeTab === 'mode'} onClick={() => setActiveTab('mode')}>MODE</TabButton>
                     <TabButton active={activeTab === 'goal'} onClick={() => setActiveTab('goal')}>GOAL</TabButton>
+                    <TabButton active={activeTab === 'dev'} onClick={() => setActiveTab('dev')}>DEV</TabButton>
                     <div className="flex-1 min-w-[10px]"></div>
                     <TabButton active={false} onClick={onClose}>CLOSE</TabButton>
                 </div>
@@ -298,6 +305,7 @@ export const SetupPanel: React.FC<SetupPanelProps> = ({ onClose, gameState, setG
                     {activeTab === 'reminders' && <RemindersTab gameState={gameState} onSaveReminders={onSaveReminders} />}
                     {activeTab === 'mode' && <ModeTab gameState={gameState} setGameState={setGameState} showToast={showToast} />}
                     {activeTab === 'goal' && <GoalTab gameState={gameState} setGameState={setGameState} showToast={showToast} />}
+                    {activeTab === 'dev' && <DevTools setGameState={setGameState} onTestReminder={() => showToast('Test toast!')} onForceReminder={onForceReminder} playGulp={playGulp} playCelebrate={playCelebrate} playEat={playEat} />}
                 </div>
             </div>
         </div>

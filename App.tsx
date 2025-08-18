@@ -7,11 +7,46 @@ import { OverGoal } from './components/OverGoal';
 import { Toast } from './components/Toast';
 import { useAudio } from './hooks/useAudio';
 import { useReminders } from './hooks/useReminders';
-import { GameState, todayKey, initialSettings } from './types';
+import { GameState, todayKey, initialSettings, Settings } from './types';
 import { updateFishLogic, getMood } from './lib/fishLogic';
 import { vibrate } from './lib/haptics';
 
 const STORAGE_KEY = "hydropet_react_v1.0"; // Bump version for new state
+
+/**
+ * Determines the current "day" key based on the user's shift settings.
+ * This allows for daily rollovers that aren't tied to midnight UTC.
+ */
+const getCurrentShiftKey = (settings: Settings): string => {
+    const now = new Date();
+    const { shiftMode, customWindow } = settings;
+
+    let resetHour = 0; // Midnight for 'day' shift
+    let resetMinute = 0;
+
+    if (shiftMode === 'night') {
+        resetHour = 12; // Noon
+    } else if (shiftMode === 'custom') {
+        const [endHour, endMinute] = customWindow.end.split(':').map(Number);
+        const resetTime = new Date();
+        resetTime.setHours(endHour, endMinute, 0, 0);
+        resetTime.setHours(resetTime.getHours() + 2); // Reset is 2 hours after the defined end time
+        resetHour = resetTime.getHours();
+        resetMinute = resetTime.getMinutes();
+    }
+
+    const todayResetTime = new Date();
+    todayResetTime.setHours(resetHour, resetMinute, 0, 0);
+
+    const dateForState = new Date(now);
+    if (now < todayResetTime) {
+        // If we are before today's calculated reset time, we are still on "yesterday's" shift.
+        dateForState.setDate(dateForState.getDate() - 1);
+    }
+    
+    return dateForState.toISOString().slice(0, 10);
+};
+
 
 const App: React.FC = () => {
     const [gameState, setGameState] = useState<GameState>(() => {
@@ -85,7 +120,7 @@ const App: React.FC = () => {
         setTimeout(() => setToastMessage(''), 3000);
     }, [playToast]);
 
-    const { requestPermissionAndSaveReminders } = useReminders(gameState, setGameState, showToast);
+    const { requestPermissionAndSaveReminders, forceReminder } = useReminders(gameState, setGameState, showToast);
 
     const lastTimeRef = useRef(performance.now());
     const gameScreenRef = useRef<HTMLDivElement>(null);
@@ -102,19 +137,20 @@ const App: React.FC = () => {
         }
     }, [gameState]);
 
-    // Daily rollover
+    // Daily rollover using shift-aware logic
     useEffect(() => {
-        if (gameState.date !== todayKey()) {
+        const currentKey = getCurrentShiftKey(gameState.settings);
+        if (gameState.date !== currentKey) {
             setGameState(prev => ({
                 ...prev,
-                date: todayKey(),
+                date: currentKey,
                 ml: 0,
-                entries: prev.entries.filter(e => e.ts.slice(0, 10) !== todayKey()),
+                entries: prev.entries.filter(e => e.ts.slice(0, 10) !== currentKey),
                 celebratedToday: false,
                 postGoalHydrations: 0
             }));
         }
-    }, [gameState.date]);
+    }, [gameState.date, gameState.settings]);
     
     const goalToday = useCallback(() => {
         return gameState.settings.useCustomGoal ? gameState.goalBase : 2000;
@@ -260,6 +296,10 @@ const App: React.FC = () => {
                     setGameState={setGameState}
                     showToast={showToast}
                     onSaveReminders={requestPermissionAndSaveReminders}
+                    onForceReminder={forceReminder}
+                    playGulp={playGulp}
+                    playCelebrate={playCelebrate}
+                    playEat={playEat}
                 />
             )}
             {isCelebrating && <Celebration onClose={() => setCelebrating(false)} />}
