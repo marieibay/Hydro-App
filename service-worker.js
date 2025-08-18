@@ -1,12 +1,11 @@
 
-const CACHE_NAME = 'hydropet-v1.2'; // Incremented cache version
+const CACHE_NAME = 'hydropet-v1.3'; // Incremented cache version
 // This list should be updated with all the files your app needs to run offline.
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -92,7 +91,7 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// NEW: Listen for 'push' events from the browser's push service
+// Listen for 'push' events from the browser's push service
 self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push Received.');
   
@@ -107,7 +106,7 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: '/icon-192x192.png',
+    icon: '/icon.svg',
     vibrate: [200, 100, 200],
     tag: 'hydropet-reminder',
     actions: [{ action: 'open', title: 'Open App' }]

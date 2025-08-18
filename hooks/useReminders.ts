@@ -1,3 +1,4 @@
+
 import { useEffect, useCallback } from 'react';
 import type { GameState, ReminderSettings, Entry } from '../types';
 import { todayKey } from '../types';
@@ -94,8 +95,8 @@ export const useReminders = (
 
 
     // 2. Set up a timer to check if a reminder is due.
-    // NOTE: This client-side timer only works when the app tab is open in the browser.
-    // True background notifications must be triggered by a server.
+    // This client-side timer provides smart reminders (based on last drink time) when the app is open.
+    // The server-side cron job provides fallback reminders when the app is closed.
     useEffect(() => {
         const intervalId = setInterval(() => {
             const { settings, entries, lastReminderTimestamp, notificationPermission, ml } = gameState;
@@ -130,7 +131,7 @@ export const useReminders = (
             }
             
             // If all checks pass, send a reminder
-            // This will be a push notification if granted, or an in-app toast otherwise.
+            // This will be a local notification if granted, or an in-app toast otherwise.
             sendReminder(false);
 
         }, 30000); // Check every 30 seconds
@@ -164,13 +165,17 @@ export const useReminders = (
         if (currentPermission === 'granted') {
             showToast('Reminders saved and notifications enabled!');
             
-            // --- NEW: Subscribe to the Push Service ---
+            // Subscribe to the Push Service for server-side notifications
             if ('serviceWorker' in navigator && 'PushManager' in window) {
                 navigator.serviceWorker.ready.then(registration => {
-                    // This is your VAPID public key.
-                    // You should generate your own key pair (e.g., using the 'web-push' library)
-                    // and store the public key here and the private key securely on your server.
-                    const vapidPublicKey = 'BPhgq1eA_e-sF8uBIwFGo_b-0XwDxt_2bM4-KzSj2ocgBlnAsqTzXfG-vJ0jRvoB-4Tq8_a8y8Z8k4pZz4J1bXk';
+                    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
+
+                    if (!vapidPublicKey) {
+                        console.error("VAPID public key not found in environment variables.");
+                        showToast("Push notifications not configured.");
+                        return;
+                    }
+
                     const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
 
                     registration.pushManager.subscribe({
@@ -179,25 +184,29 @@ export const useReminders = (
                     }).then(subscription => {
                         console.log('User is subscribed:', subscription);
                         
-                        // ===================================================================
-                        // TODO: Send this 'subscription' object to your backend server!
-                        // The server will use this object to send push notifications.
-                        // Example:
-                        // fetch('/api/save-subscription', {
-                        //   method: 'POST',
-                        //   headers: { 'Content-Type': 'application/json' },
-                        //   body: JSON.stringify(subscription)
-                        // });
-                        // ===================================================================
+                        // Send the subscription object to our backend API
+                        fetch('/api/save-subscription', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(subscription)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to save subscription on server.');
+                            }
+                            console.log('Subscription saved on server.');
+                        })
+                        .catch(err => {
+                            console.error('Error sending subscription to server: ', err);
+                            showToast('Could not save reminder preference.');
+                        });
 
                     }).catch(err => {
                         console.error('Failed to subscribe the user: ', err);
-                        // This can fail if the VAPID key is invalid or if there's a browser issue.
                         showToast('Push subscription failed.');
                     });
                 });
             }
-            // --- END NEW ---
 
         } else if (currentPermission === 'denied') {
             showToast('Notifications blocked. Reminders will show in-app only.');

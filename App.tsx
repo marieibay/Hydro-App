@@ -174,6 +174,23 @@ const App: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [gameState.date, gameState.settings]);
     
+    // Fix for physics bugs when tab is backgrounded
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            // When the page becomes visible again, reset the time reference
+            // to avoid a large 'dt' jump which can cause physics glitches.
+            if (document.visibilityState === 'visible') {
+                lastTimeRef.current = performance.now();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, []);
+
     const goalToday = useCallback(() => {
         return gameState.settings.useCustomGoal ? gameState.goalBase : 2000;
     }, [gameState.settings.useCustomGoal, gameState.goalBase]);
