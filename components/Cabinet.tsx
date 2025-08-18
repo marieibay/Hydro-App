@@ -17,9 +17,11 @@ interface CabinetProps {
     onPokeFish: (x: number, y: number) => void;
     gameScreenRef: React.RefObject<HTMLDivElement>;
     unlockAudio: () => void;
+    isMuted: boolean;
+    onToggleMute: () => void;
 }
 
-export const Cabinet: React.FC<CabinetProps> = ({ gameState, setGameState, goalToday, mood, onOpenSetup, onOpenDevTools, onAddWater, onDropFood, onPokeFish, gameScreenRef, unlockAudio }) => {
+export const Cabinet: React.FC<CabinetProps> = ({ gameState, setGameState, goalToday, mood, onOpenSetup, onOpenDevTools, onAddWater, onDropFood, onPokeFish, gameScreenRef, unlockAudio, isMuted, onToggleMute }) => {
     const { ml } = gameState;
     const percentage = Math.min(100, (ml / Math.max(1, goalToday)) * 100);
 
@@ -58,7 +60,7 @@ export const Cabinet: React.FC<CabinetProps> = ({ gameState, setGameState, goalT
                 
                 <Meter ml={ml} goal={goalToday} />
 
-                <div className="flex justify-center gap-2 mt-2.5">
+                <div className="flex justify-center items-center gap-2 mt-2.5">
                     <button 
                         id="setupBtn"
                         onClick={onOpenSetup}
@@ -72,6 +74,14 @@ export const Cabinet: React.FC<CabinetProps> = ({ gameState, setGameState, goalT
                         className="flex-1 bg-black border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2),0_6px_0_#000] text-[#ff8a5b] font-bold py-3 px-3.5 rounded-md cursor-pointer [text-shadow:0_1px_0_#000] tracking-wider active:transform active:translate-y-0.5 active:shadow-[inset_0_0_0_4px_var(--border2),0_4px_0_#000] hover:brightness-110 hover:-translate-y-px focus-visible:outline-3 focus-visible:outline-[#ff8a5b] focus-visible:outline-offset-2"
                     >
                         DEV
+                    </button>
+                    <button
+                        id="audioBtn"
+                        onClick={onToggleMute}
+                        aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+                        className="w-[58px] h-[58px] bg-black border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2),0_6px_0_#000] text-[#ffd12b] font-bold rounded-md cursor-pointer [text-shadow:0_1px_0_#000] active:transform active:translate-y-0.5 active:shadow-[inset_0_0_0_4px_var(--border2),0_4px_0_#000] hover:brightness-110 hover:-translate-y-px focus-visible:outline-3 focus-visible:outline-[#ffd12b] focus-visible:outline-offset-2 flex items-center justify-center text-2xl"
+                    >
+                        {isMuted ? '🔇' : '🔊'}
                     </button>
                 </div>
 

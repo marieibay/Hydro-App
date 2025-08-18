@@ -10,6 +10,22 @@ const lastDrinkMsAgo = (entries: Entry[]): number => {
     return Date.now() - new Date(last.ts).getTime();
 };
 
+/**
+ * Converts a VAPID public key string to a Uint8Array.
+ */
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 export const useReminders = (
     gameState: GameState,
     setGameState: React.Dispatch<React.SetStateAction<GameState>>,
@@ -41,8 +57,8 @@ export const useReminders = (
                     tag: 'hydropet-reminder' // Use a tag to prevent stacking notifications
                 };
                 
-                // Post a message to the service worker to display the notification.
-                // This is the correct way to trigger notifications that work in the background.
+                // This sends a message to the service worker for client-side triggered notifications.
+                // This is great for testing or in-app reminders.
                 registration.active?.postMessage({
                     type: 'show-notification',
                     title: 'HydroPet Reminder',
@@ -67,7 +83,9 @@ export const useReminders = (
     }, [gameState.notificationPermission, setGameState, showToast]);
 
 
-    // 2. Set up a timer to check if a reminder is due
+    // 2. Set up a timer to check if a reminder is due.
+    // NOTE: This client-side timer only works when the app tab is open in the browser.
+    // True background notifications must be triggered by a server.
     useEffect(() => {
         const intervalId = setInterval(() => {
             const { settings, entries, lastReminderTimestamp, notificationPermission, ml } = gameState;
@@ -102,12 +120,8 @@ export const useReminders = (
             }
             
             // If all checks pass, send a reminder
-            if (notificationPermission === 'granted') {
-                 sendReminder(false);
-            } else { // Fallback to in-app toast if permission not granted
-                 showToast("Time for some water!");
-                 setGameState(prev => ({ ...prev, lastReminderTimestamp: Date.now() }));
-            }
+            // This will be a push notification if granted, or an in-app toast otherwise.
+            sendReminder(false);
 
         }, 30000); // Check every 30 seconds
 
@@ -119,12 +133,11 @@ export const useReminders = (
         let currentPermission = gameState.notificationPermission;
 
         // Only request permission if it's the default state. Don't re-prompt if it's already denied or granted.
-        if (currentPermission === 'default') {
+        if (currentPermission === 'default' && 'Notification' in window) {
             try {
                 currentPermission = await Notification.requestPermission();
             } catch (error) {
                 console.error("Error requesting notification permission:", error);
-                // If there's an error, it's likely the user dismissed it, so treat as default for now.
                 currentPermission = 'default';
             }
         }
@@ -140,6 +153,42 @@ export const useReminders = (
 
         if (currentPermission === 'granted') {
             showToast('Reminders saved and notifications enabled!');
+            
+            // --- NEW: Subscribe to the Push Service ---
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                navigator.serviceWorker.ready.then(registration => {
+                    // This is your VAPID public key.
+                    // You should generate your own key pair (e.g., using the 'web-push' library)
+                    // and store the public key here and the private key securely on your server.
+                    const vapidPublicKey = 'BPhgq1eA_e-sF8uBIwFGo_b-0XwDxt_2bM4-KzSj2ocgBlnAsqTzXfG-vJ0jRvoB-4Tq8_a8y8Z8k4pZz4J1bXk';
+                    const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
+
+                    registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: convertedVapidKey
+                    }).then(subscription => {
+                        console.log('User is subscribed:', subscription);
+                        
+                        // ===================================================================
+                        // TODO: Send this 'subscription' object to your backend server!
+                        // The server will use this object to send push notifications.
+                        // Example:
+                        // fetch('/api/save-subscription', {
+                        //   method: 'POST',
+                        //   headers: { 'Content-Type': 'application/json' },
+                        //   body: JSON.stringify(subscription)
+                        // });
+                        // ===================================================================
+
+                    }).catch(err => {
+                        console.error('Failed to subscribe the user: ', err);
+                        // This can fail if the VAPID key is invalid or if there's a browser issue.
+                        showToast('Push subscription failed.');
+                    });
+                });
+            }
+            // --- END NEW ---
+
         } else if (currentPermission === 'denied') {
             showToast('Notifications blocked. Reminders will show in-app only.');
         } else {

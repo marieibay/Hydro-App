@@ -75,6 +75,8 @@ const App: React.FC = () => {
                 if (typeof parsed.notificationPermission === 'undefined') parsed.notificationPermission = 'default';
                 if (typeof parsed.lastReminderTimestamp === 'undefined') parsed.lastReminderTimestamp = 0;
                 if (typeof parsed.goalRecommendation === 'undefined') parsed.goalRecommendation = null;
+                if (typeof parsed.settings.isMuted === 'undefined') parsed.settings.isMuted = false;
+                parsed.isCalculatingGoal = false; // Transient state
 
 
                 // Ensure removed properties are gone
@@ -115,6 +117,7 @@ const App: React.FC = () => {
             notificationPermission: 'default',
             lastReminderTimestamp: 0,
             goalRecommendation: null,
+            isCalculatingGoal: false,
         };
     });
 
@@ -124,7 +127,7 @@ const App: React.FC = () => {
     const [isCelebrating, setCelebrating] = useState(false);
     const [isOverhydrated, setOverhydrated] = useState(false);
     
-    const { playGulp, playCelebrate, playEat, playToast, unlockAudio, AudioGate, playOverGoal, playPlop, playPoke } = useAudio();
+    const { playGulp, playCelebrate, playEat, playToast, unlockAudio, playOverGoal, playPlop, playPoke } = useAudio(gameState.settings.isMuted);
     
     const showToast = useCallback((msg: string) => {
         playToast();
@@ -143,6 +146,7 @@ const App: React.FC = () => {
             const stateToSave = { ...gameState };
             // Don't save transient state
             delete stateToSave.followTimeoutId;
+            delete stateToSave.isCalculatingGoal;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
         } catch (e) {
             console.error("Failed to save state to localStorage", e);
@@ -294,6 +298,17 @@ const App: React.FC = () => {
         }
     };
 
+    const handleToggleMute = useCallback(() => {
+        unlockAudio(); // Ensure context is running on first toggle
+        setGameState(prev => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                isMuted: !prev.settings.isMuted
+            }
+        }));
+    }, [unlockAudio, setGameState]);
+
     return (
         <div className="stage font-press-start flex justify-center w-full">
             <main>
@@ -309,6 +324,8 @@ const App: React.FC = () => {
                     onPokeFish={handlePokeFish}
                     gameScreenRef={gameScreenRef}
                     unlockAudio={unlockAudio}
+                    isMuted={gameState.settings.isMuted}
+                    onToggleMute={handleToggleMute}
                 />
             </main>
             {isSetupOpen && (
@@ -334,7 +351,6 @@ const App: React.FC = () => {
             {isCelebrating && <Celebration onClose={() => setCelebrating(false)} />}
             {isOverhydrated && <OverGoal onClose={() => setOverhydrated(false)} />}
             <Toast message={toastMessage} />
-            <AudioGate />
         </div>
     );
 };

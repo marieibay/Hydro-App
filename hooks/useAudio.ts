@@ -1,8 +1,7 @@
 
 import { useState, useRef, useCallback } from 'react';
-import React from 'react';
 
-export const useAudio = () => {
+export const useAudio = (isMuted: boolean) => {
     const audioCtxRef = useRef<AudioContext | null>(null);
     const [isAudioUnlocked, setAudioUnlocked] = useState(false);
 
@@ -30,10 +29,11 @@ export const useAudio = () => {
     }, [ensureAudioContext, isAudioUnlocked]);
 
     const playSound = useCallback((...soundFns: ((ac: AudioContext, time: number) => void)[]) => {
+        if (isMuted) return;
         const ac = ensureAudioContext();
         if (!ac || ac.state !== 'running') return;
         soundFns.forEach(fn => fn(ac, ac.currentTime));
-    }, [ensureAudioContext]);
+    }, [ensureAudioContext, isMuted]);
 
     const beep = (freq: number, time: number, type: OscillatorType) => (ac: AudioContext, now: number) => {
         const o = ac.createOscillator();
@@ -58,7 +58,7 @@ export const useAudio = () => {
     
     const playEat = useCallback(() => {
        const ac = ensureAudioContext();
-       if (!ac || ac.state !== 'running') return;
+       if (!ac || ac.state !== 'running' || isMuted) return;
        const now = ac.currentTime;
        
        // Crunchy noise part
@@ -99,11 +99,11 @@ export const useAudio = () => {
        o.connect(synthGain).connect(ac.destination);
        o.start(now);
        o.stop(now + 0.1);
-    }, [ensureAudioContext]);
+    }, [ensureAudioContext, isMuted]);
     
     const playPlop = useCallback(() => {
         const ac = ensureAudioContext();
-        if (!ac || ac.state !== 'running') return;
+        if (!ac || ac.state !== 'running' || isMuted) return;
         const now = ac.currentTime;
 
         const o = ac.createOscillator();
@@ -119,11 +119,11 @@ export const useAudio = () => {
         o.connect(g).connect(ac.destination);
         o.start(now);
         o.stop(now + 0.25);
-    }, [ensureAudioContext]);
+    }, [ensureAudioContext, isMuted]);
 
     const playPoke = useCallback(() => {
         const ac = ensureAudioContext();
-        if (!ac || ac.state !== 'running') return;
+        if (!ac || ac.state !== 'running' || isMuted) return;
         const now = ac.currentTime;
 
         const o = ac.createOscillator();
@@ -139,11 +139,11 @@ export const useAudio = () => {
         o.connect(g).connect(ac.destination);
         o.start(now);
         o.stop(now + 0.2);
-    }, [ensureAudioContext]);
+    }, [ensureAudioContext, isMuted]);
 
     const playCelebrate = useCallback(() => {
         const ac = ensureAudioContext();
-        if (!ac || ac.state !== 'running') return;
+        if (!ac || ac.state !== 'running' || isMuted) return;
         const now = ac.currentTime;
         const tone = (freq: number, t0: number, dur: number, type: OscillatorType) => {
              const o = ac.createOscillator(), g = ac.createGain();
@@ -159,18 +159,9 @@ export const useAudio = () => {
         for(let i=0; i<seq.length; i++) { tone(seq[i], i*0.12, 0.18, 'triangle'); }
         const chord=[523.25,659.25,783.99,987.77]; 
         for(let j=0; j<chord.length; j++) { tone(chord[j], 0.48, 0.6, 'square'); }
-    }, [ensureAudioContext]);
+    }, [ensureAudioContext, isMuted]);
 
     const playOverGoal = useCallback(() => playSound(beep(330, 0.15, 'triangle')), [playSound]);
 
-    const AudioGate = () => (
-        !isAudioUnlocked ? (
-            React.createElement('button', {
-                onClick: unlockAudio,
-                className: "fixed bottom-3 right-3 bg-black border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2)] text-[#ffd12b] py-2 px-2.5 rounded-md cursor-pointer z-80"
-            }, 'ENABLE AUDIO')
-        ) : null
-    );
-
-    return { playGulp, playCelebrate, playEat, playToast, unlockAudio, AudioGate, playOverGoal, playPlop, playPoke };
+    return { playGulp, playCelebrate, playEat, playToast, unlockAudio, playOverGoal, playPlop, playPoke };
 };

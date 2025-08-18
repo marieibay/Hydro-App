@@ -64,6 +64,7 @@ export interface Settings {
     shiftMode: ShiftMode;
     customWindow: CustomWindow;
     cadenceMin: number;
+    isMuted: boolean;
 }
 
 export interface GameState {
@@ -87,6 +88,7 @@ export interface GameState {
     notificationPermission: NotificationPermission | 'default';
     lastReminderTimestamp: number;
     goalRecommendation: string | null;
+    isCalculatingGoal?: boolean;
 }
 
 export const initialSettings: Settings = {
@@ -102,6 +104,7 @@ export const initialSettings: Settings = {
         end: '07:00'
     },
     cadenceMin: 60,
+    isMuted: false,
 };
 
 export const todayKey = (d: Date = new Date()): string => d.toISOString().slice(0, 10);

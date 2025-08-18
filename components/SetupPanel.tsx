@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import type { GameState, ShiftMode, ReminderSettings } from '../types';
 import { todayKey } from '../types';
+import { GoogleGenAI, Type } from '@google/genai';
 
 interface SetupPanelProps {
     onClose: () => void;
@@ -13,10 +14,11 @@ interface SetupPanelProps {
 
 type Tab = 'stats' | 'reminders' | 'mode' | 'goal';
 
-const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode; className?: string }> = ({ active, onClick, children, className }) => (
+const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode; className?: string, disabled?: boolean }> = ({ active, onClick, children, className, disabled }) => (
     <button
-        className={`py-2 px-2.5 border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2)] font-bold cursor-pointer rounded-sm text-xs ${active ? 'bg-black text-[#ffd12b]' : 'bg-[#061021] text-[#a7c5f4]'} ${className}`}
+        className={`py-2 px-2.5 border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2)] font-bold cursor-pointer rounded-sm text-xs ${active ? 'bg-black text-[#ffd12b]' : 'bg-[#061021] text-[#a7c5f4]'} ${className} disabled:opacity-50 disabled:cursor-not-allowed`}
         onClick={onClick}
+        disabled={disabled}
     >
         {children}
     </button>
@@ -34,7 +36,7 @@ const Hint: React.FC<{ children: React.ReactNode, className?: string }> = ({ chi
     <div className={`text-[11px] text-[--muted] ${className}`}>{children}</div>
 );
 
-const BaseInput = "bg-[#061021] border-2 border-[--blue-dark] shadow-[inset_0_0_0_2px_var(--border2)] text-white p-2 rounded-sm w-full";
+const BaseInput = "bg-[#061021] border-2 border-[--blue-dark] shadow-[inset_0_0_0_2px_var(--border2)] text-white p-2 rounded-sm w-full disabled:opacity-60";
 
 // --- Stats Tab ---
 const StatsTab: React.FC<{ gameState: GameState }> = ({ gameState }) => {
@@ -213,6 +215,7 @@ const GoalTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'sh
     const [age, setAge] = useState('');
     const [weight, setWeight] = useState('');
     const [activity, setActivity] = useState('moderate');
+    const isCalculating = gameState.isCalculatingGoal ?? false;
 
     const handleSave = () => {
         setGameState(prev => ({
@@ -224,7 +227,7 @@ const GoalTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'sh
         showToast('Goal saved');
     };
     
-    const handleCalculate = () => {
+    const handleCalculate = async () => {
         const numAge = +age;
         const numWeight = +weight;
         if (!numAge || numAge < 5 || numAge > 100) { 
@@ -236,30 +239,69 @@ const GoalTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'sh
             return; 
         }
         
-        let ounces = (numWeight * 0.5);
-        if (activity === 'moderate') ounces += 12;
-        if (activity === 'active') ounces += 24;
-        const ml = Math.round((ounces * 29.5735) / 50) * 50;
-        
-        setGameState(prev => ({ ...prev, goalRecommendation: `Recommended: ~${ml} ml` }));
-        setGoal(ml);
-        setUseCustom(true);
+        setGameState(prev => ({ ...prev, isCalculatingGoal: true, goalRecommendation: "AI is calculating..." }));
+
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: `Based on this user data, calculate a recommended daily water intake in milliliters (ml). Age: ${numAge} years, Weight: ${numWeight} lbs, Activity Level: ${activity}. Provide a brief, one-sentence, encouraging reason for this recommendation. Round the final goal to the nearest 50ml.`,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            goal: {
+                                type: Type.NUMBER,
+                                description: "The recommended daily water intake in milliliters."
+                            },
+                            reason: {
+                                type: Type.STRING,
+                                description: "A short, encouraging explanation for the recommended goal."
+                            }
+                        },
+                        required: ["goal", "reason"]
+                    },
+                },
+            });
+            
+            const jsonStr = response.text.trim();
+            const result = JSON.parse(jsonStr);
+
+            setGameState(prev => ({ 
+                ...prev, 
+                goalRecommendation: result.reason,
+                isCalculatingGoal: false,
+            }));
+            setGoal(result.goal);
+            setUseCustom(true);
+
+        } catch (error) {
+            console.error("Gemini API call failed:", error);
+            setGameState(prev => ({ 
+                ...prev, 
+                goalRecommendation: "Sorry, couldn't calculate. Please try again.",
+                isCalculatingGoal: false,
+            }));
+        }
     };
 
     return (
         <div>
-            <div className="text-sm text-[#a7c5f4] py-1">Goal Wizard</div>
-            <Row label="Age (years)"><input type="number" value={age} onChange={e=>setAge(e.target.value)} className={BaseInput} /></Row>
-            <Row label="Weight (lbs)"><input type="number" value={weight} onChange={e=>setWeight(e.target.value)} className={BaseInput} /></Row>
+            <div className="text-sm text-[#a7c5f4] py-1">Goal Wizard (AI-Powered)</div>
+            <Row label="Age (years)"><input type="number" value={age} onChange={e=>setAge(e.target.value)} className={BaseInput} disabled={isCalculating} /></Row>
+            <Row label="Weight (lbs)"><input type="number" value={weight} onChange={e=>setWeight(e.target.value)} className={BaseInput} disabled={isCalculating} /></Row>
             <Row label="Activity">
-                <select value={activity} onChange={e=>setActivity(e.target.value)} className={BaseInput}>
+                <select value={activity} onChange={e=>setActivity(e.target.value)} className={BaseInput} disabled={isCalculating}>
                     <option value="sedentary">Sedentary</option>
                     <option value="moderate">Moderate</option>
                     <option value="active">Active</option>
                 </select>
             </Row>
             <div className="flex items-center gap-2 my-3 flex-wrap">
-                 <TabButton active={true} onClick={handleCalculate}>CALCULATE</TabButton>
+                 <TabButton active={true} onClick={handleCalculate} disabled={isCalculating}>
+                    {isCalculating ? 'CALCULATING...' : 'CALCULATE WITH AI'}
+                 </TabButton>
                  <Hint>{gameState.goalRecommendation || ''}</Hint>
             </div>
             <hr className="border-none h-px bg-[#0e2d66] my-2" />
