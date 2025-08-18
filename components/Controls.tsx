@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface ControlsProps {
@@ -22,7 +21,7 @@ const GlassButton: React.FC<{ amount: number; waterHeight: string; onClick: () =
 
 export const Controls: React.FC<ControlsProps> = ({ onAddWater }) => {
     return (
-        <div className="grid grid-cols-3 gap-2.5 max-w-[calc(var(--maxw)-56px)] mx-auto my-2">
+        <div className="grid grid-cols-3 gap-2.5 max-w-[calc(var(--maxw)-56px)] mx-auto my-2 [@media(max-height:740px)]:my-1">
             <GlassButton amount={100} waterHeight="33%" onClick={() => onAddWater(100)} />
             <GlassButton amount={200} waterHeight="66%" onClick={() => onAddWater(200)} />
             <GlassButton amount={300} waterHeight="100%" onClick={() => onAddWater(300)} />

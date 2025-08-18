@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, forwardRef } from 'react';
 import { useFishSprite } from '../hooks/useFishSprite';
 import { GameState, Mood } from '../types';
@@ -89,7 +88,7 @@ export const GameScreen = forwardRef<HTMLDivElement, GameScreenProps>(({ gameSta
             ref={ref}
             onDoubleClick={handleDoubleClick}
             onPointerDown={handlePointerDown}
-            className="border-4 border-[--glass] rounded bg-[--screen] aspect-[1/0.95] relative overflow-hidden my-1.5 mx-auto max-w-[calc(var(--maxw)-56px)] cursor-pointer"
+            className="border-4 border-[--glass] rounded bg-[--screen] aspect-[1/0.95] [@media(max-height:740px)]:aspect-[1/0.8] relative overflow-hidden my-1.5 mx-auto max-w-[calc(var(--maxw)-56px)] cursor-pointer"
         >
             <canvas ref={canvasRef} className="absolute inset-0 image-pixelated z-[2]" />
             <div 
