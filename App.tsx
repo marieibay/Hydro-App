@@ -181,10 +181,10 @@ const App: React.FC = () => {
 
     const currentMood = getMood(gameState, goalToday());
 
-    // Game Loop with robust pause/resume on tab visibility change
+    // Game Loop with robust pause/resume logic
     useEffect(() => {
         const loop = (timestamp: number) => {
-            const dt = Math.min(0.033, (timestamp - lastTimeRef.current) / 1000);
+            const dt = Math.min(0.033, (timestamp - lastTimeRef.current) / 1000); // Clamp dt
             lastTimeRef.current = timestamp;
 
             updateFishLogic(setGameState, gameScreenRef, dt, getMood, goalToday, playEat, playPlop);
@@ -194,7 +194,6 @@ const App: React.FC = () => {
 
         const startLoop = () => {
             if (animationFrameId.current === null) {
-                lastTimeRef.current = performance.now(); // Reset time right before starting
                 animationFrameId.current = requestAnimationFrame(loop);
             }
         };
@@ -208,6 +207,8 @@ const App: React.FC = () => {
 
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
+                // When returning to the tab, reset the timer to prevent a large dt jump
+                lastTimeRef.current = performance.now(); 
                 startLoop();
             } else {
                 stopLoop();
@@ -215,11 +216,12 @@ const App: React.FC = () => {
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        startLoop(); // Initial start
+        // Initialize the timer and start the loop
+        lastTimeRef.current = performance.now();
+        startLoop();
 
         return () => {
-            stopLoop(); // Cleanup on component unmount
+            stopLoop();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [goalToday, playEat, playPlop, setGameState]);

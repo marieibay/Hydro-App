@@ -1,5 +1,4 @@
-
-const CACHE_NAME = 'hydropet-v1.4'; // Incremented cache version
+const CACHE_NAME = 'hydropet-v1.8'; // Incremented cache version
 // This list should be updated with all the files your app needs to run offline.
 const urlsToCache = [
   '/',
