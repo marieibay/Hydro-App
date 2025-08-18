@@ -5,6 +5,7 @@ import { SetupPanel } from './components/SetupPanel';
 import { Celebration } from './components/Celebration';
 import { OverGoal } from './components/OverGoal';
 import { Toast } from './components/Toast';
+import { DevTools } from './components/DevTools';
 import { useAudio } from './hooks/useAudio';
 import { useReminders } from './hooks/useReminders';
 import { GameState, initialSettings, Settings } from './types';
@@ -118,6 +119,7 @@ const App: React.FC = () => {
     });
 
     const [isSetupOpen, setSetupOpen] = useState(false);
+    const [isDevToolsOpen, setDevToolsOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
     const [isCelebrating, setCelebrating] = useState(false);
     const [isOverhydrated, setOverhydrated] = useState(false);
@@ -301,6 +303,7 @@ const App: React.FC = () => {
                     goalToday={goalToday()}
                     mood={currentMood}
                     onOpenSetup={() => setSetupOpen(true)}
+                    onOpenDevTools={() => setDevToolsOpen(true)}
                     onAddWater={handleAddWater}
                     onDropFood={handleDropFood}
                     onPokeFish={handlePokeFish}
@@ -315,6 +318,13 @@ const App: React.FC = () => {
                     setGameState={setGameState}
                     showToast={showToast}
                     onSaveReminders={requestPermissionAndSaveReminders}
+                />
+            )}
+            {isDevToolsOpen && (
+                <DevTools
+                    onClose={() => setDevToolsOpen(false)}
+                    setGameState={setGameState}
+                    onTestReminder={() => showToast('Test toast!')}
                     onForceReminder={forceReminder}
                     playGulp={playGulp}
                     playCelebrate={playCelebrate}

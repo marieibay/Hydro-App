@@ -1,3 +1,4 @@
+
 const CACHE_NAME = 'hydropet-v1.1';
 // This list should be updated with all the files your app needs to run offline.
 const urlsToCache = [
@@ -61,4 +62,14 @@ self.addEventListener('notificationclick', (event) => {
       return clients.openWindow('/');
     })
   );
+});
+
+// Listen for messages from the main app to show a notification
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'show-notification') {
+    const { title, options } = event.data;
+    event.waitUntil(
+      self.registration.showNotification(title, options)
+    );
+  }
 });

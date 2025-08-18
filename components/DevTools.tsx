@@ -1,7 +1,9 @@
+
 import React from 'react';
 import type { GameState, Mood } from '../types';
 
 interface DevToolsProps {
+    onClose: () => void;
     setGameState: React.Dispatch<React.SetStateAction<GameState>>;
     onTestReminder: () => void;
     onForceReminder: () => void;
@@ -19,8 +21,13 @@ const PxButton: React.FC<{ onClick: () => void; children: React.ReactNode }> = (
     </button>
 );
 
-export const DevTools: React.FC<DevToolsProps> = ({ setGameState, onTestReminder, onForceReminder, playGulp, playCelebrate, playEat }) => {
+export const DevTools: React.FC<DevToolsProps> = ({ onClose, setGameState, onTestReminder, onForceReminder, playGulp, playCelebrate, playEat }) => {
     
+    const handleAction = (actionFn: () => void) => {
+        actionFn();
+        onClose();
+    };
+
     const handleReset = () => {
         setGameState(prev => ({
             ...prev,
@@ -55,19 +62,24 @@ export const DevTools: React.FC<DevToolsProps> = ({ setGameState, onTestReminder
     };
 
     return (
-        <div className="bg-[#0d1a2c] border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2)] rounded-md p-2.5">
-            <h3 className="m-0 mb-2 text-xs text-[--aqua] tracking-wider">DEV • TEST</h3>
-            <div className="grid grid-cols-2 gap-2">
-                <PxButton onClick={handleUndo}>UNDO</PxButton>
-                <PxButton onClick={handleReset}>RESET TODAY</PxButton>
-                <PxButton onClick={onTestReminder}>TEST TOAST</PxButton>
-                <PxButton onClick={onForceReminder}>FORCE REMINDER</PxButton>
-                <PxButton onClick={handleNextMood}>NEXT MOOD</PxButton>
-                <PxButton onClick={playGulp}>AUDIO: GULP</PxButton>
-                <PxButton onClick={playCelebrate}>AUDIO: CELEBRATE</PxButton>
-                <PxButton onClick={playEat}>AUDIO: EAT</PxButton>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-md z-50 p-4">
+            <div className="w-[min(400px,95vw)] bg-[--cabinet] border-4 border-[--blue-dark] shadow-[inset_0_0_0_4px_var(--border2)] rounded-md p-3">
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="m-0 text-xs text-[#ff8a5b] tracking-wider">DEV • TEST</h3>
+                    <button className="py-1 px-2 text-xs bg-[#061021] text-[#a7c5f4] border-2 border-[--blue-dark] rounded-sm" onClick={onClose}>CLOSE</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <PxButton onClick={() => handleAction(handleUndo)}>UNDO</PxButton>
+                    <PxButton onClick={() => handleAction(handleReset)}>RESET TODAY</PxButton>
+                    <PxButton onClick={() => handleAction(onTestReminder)}>TEST TOAST</PxButton>
+                    <PxButton onClick={() => handleAction(onForceReminder)}>FORCE REMINDER</PxButton>
+                    <PxButton onClick={() => handleAction(handleNextMood)}>NEXT MOOD</PxButton>
+                    <PxButton onClick={() => handleAction(playGulp)}>AUDIO: GULP</PxButton>
+                    <PxButton onClick={() => handleAction(playCelebrate)}>AUDIO: CELEBRATE</PxButton>
+                    <PxButton onClick={() => handleAction(playEat)}>AUDIO: EAT</PxButton>
+                </div>
+                <div className="text-[--muted] text-[11px] mt-2">Tests: A-OK</div>
             </div>
-            <div className="text-[--muted] text-[11px] mt-2">Tests: A-OK</div>
         </div>
     );
 };

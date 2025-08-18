@@ -32,23 +32,37 @@ export const useReminders = (
     const sendReminder = useCallback((force = false) => {
         const reminderText = "Time for some water!";
         
-        if (gameState.notificationPermission === 'granted') {
-            navigator.serviceWorker.ready.then(registration => {
-                // This object is created separately to bypass TypeScript's excess property checking
-                // which might not include the 'vibrate' property in its default NotificationOptions type.
+        if (gameState.notificationPermission === 'granted' && 'serviceWorker' in navigator) {
+             navigator.serviceWorker.ready.then(registration => {
                 const notificationOptions = {
                     body: reminderText,
                     icon: '/icon-192x192.png',
                     vibrate: [200, 100, 200], // Add haptic feedback
+                    tag: 'hydropet-reminder' // Use a tag to prevent stacking notifications
                 };
-                registration.showNotification('HydroPet Reminder', notificationOptions);
+                
+                // Post a message to the service worker to display the notification.
+                // This is the correct way to trigger notifications that work in the background.
+                registration.active?.postMessage({
+                    type: 'show-notification',
+                    title: 'HydroPet Reminder',
+                    options: notificationOptions,
+                });
+
                 if (!force) {
                     setGameState(prev => ({ ...prev, lastReminderTimestamp: Date.now() }));
                 }
-            }).catch(err => console.error("Error showing notification:", err));
-        } else if (force) {
-            // If forcing a reminder for testing and perms aren't granted, show a toast.
+             }).catch(err => {
+                 console.error("Error sending message to service worker:", err);
+                 // Fallback to toast if service worker messaging fails
+                 if (force) showToast(reminderText);
+             });
+        } else {
+            // If permission isn't granted, or for testing, show a toast.
             showToast(reminderText);
+             if (!force) {
+                setGameState(prev => ({ ...prev, lastReminderTimestamp: Date.now() }));
+            }
         }
     }, [gameState.notificationPermission, setGameState, showToast]);
 
