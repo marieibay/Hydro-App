@@ -198,7 +198,7 @@ export function updateFishLogic(
 
         newState.foods = updatedFoods.filter(f => f.life > 0 && f.id !== eatenFoodId);
 
-        // --- Bubbles (Stable Implementation) ---
+        // --- Bubbles ---
         const bubbleParams = { happy: { speed: 60, count: 12 }, ok: { speed: 50, count: 12 }, sick: { speed: 36, count: 8 }, sos: { speed: 22, count: 6 } }[m];
         if (newState.bubbles.length < bubbleParams.count && performance.now() - newState.lastBubbleAt > 250) {
             newState.bubbles.push({
@@ -212,7 +212,7 @@ export function updateFishLogic(
         }
         newState.bubbles = newState.bubbles
             .map((b: Bubble) => ({ ...b, y: b.y - b.vy * dt }))
-            .filter((b: Bubble) => b.y > waterTopPx); // FIX: Remove bubble when its center reaches the water surface.
+            .filter((b: Bubble) => (b.y + b.r) > waterTopPx); // Remove bubble when its bottom edge reaches the water surface.
         
         // ----- FISH MOVEMENT: DYNAMIC SWIMMING -----
         const pad = 30;

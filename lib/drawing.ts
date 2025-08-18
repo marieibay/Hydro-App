@@ -51,7 +51,8 @@ export function drawBubbles(ctx: CanvasRenderingContext2D, bubbles: Bubble[], ca
     const waterTopPx = canvas.height * (1 - waterPercentage / 100);
     ctx.save();
     for (const b of bubbles) {
-        if (b.y <= waterTopPx) continue;
+        // This check is redundant with the filter in fishLogic and can cause bubbles to disappear a frame early.
+        // if (b.y <= waterTopPx) continue; 
         ctx.globalAlpha = b.a;
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
