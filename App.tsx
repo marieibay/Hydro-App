@@ -7,7 +7,7 @@ import { OverGoal } from './components/OverGoal';
 import { Toast } from './components/Toast';
 import { useAudio } from './hooks/useAudio';
 import { useReminders } from './hooks/useReminders';
-import { GameState, todayKey, initialSettings, Settings } from './types';
+import { GameState, initialSettings, Settings } from './types';
 import { updateFishLogic, getMood } from './lib/fishLogic';
 import { vibrate } from './lib/haptics';
 
@@ -78,13 +78,23 @@ const App: React.FC = () => {
 
                 // Ensure removed properties are gone
                 delete parsed.mouthBubs;
+                
+                // On load, check if a rollover is needed immediately
+                const currentKey = getCurrentShiftKey(parsed.settings);
+                if (parsed.date !== currentKey) {
+                    parsed.date = currentKey;
+                    parsed.ml = 0;
+                    parsed.celebratedToday = false;
+                    parsed.postGoalHydrations = 0;
+                }
+
                 return parsed;
             }
         } catch (e) {
             console.error("Failed to load state from localStorage", e);
         }
         return {
-            date: todayKey(),
+            date: getCurrentShiftKey(initialSettings),
             goalBase: 2000,
             ml: 0,
             entries: [],
@@ -139,17 +149,26 @@ const App: React.FC = () => {
 
     // Daily rollover using shift-aware logic
     useEffect(() => {
-        const currentKey = getCurrentShiftKey(gameState.settings);
-        if (gameState.date !== currentKey) {
-            setGameState(prev => ({
-                ...prev,
-                date: currentKey,
-                ml: 0,
-                entries: prev.entries.filter(e => e.ts.slice(0, 10) !== currentKey),
-                celebratedToday: false,
-                postGoalHydrations: 0
-            }));
-        }
+        const checkRollover = () => {
+            const currentKey = getCurrentShiftKey(gameState.settings);
+            if (gameState.date !== currentKey) {
+                console.log(`Rollover triggered: from ${gameState.date} to ${currentKey}`);
+                setGameState(prev => ({
+                    ...prev,
+                    date: currentKey,
+                    ml: 0,
+                    // Entries are preserved for historical stats
+                    celebratedToday: false,
+                    postGoalHydrations: 0
+                }));
+            }
+        };
+
+        // Check immediately and then set up an interval to check periodically
+        checkRollover();
+        const intervalId = setInterval(checkRollover, 60 * 1000); // Check every minute
+
+        return () => clearInterval(intervalId);
     }, [gameState.date, gameState.settings]);
     
     const goalToday = useCallback(() => {

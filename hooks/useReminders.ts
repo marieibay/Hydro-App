@@ -34,10 +34,12 @@ export const useReminders = (
         
         if (gameState.notificationPermission === 'granted') {
             navigator.serviceWorker.ready.then(registration => {
+                // This object is created separately to bypass TypeScript's excess property checking
+                // which might not include the 'vibrate' property in its default NotificationOptions type.
                 const notificationOptions = {
                     body: reminderText,
                     icon: '/icon-192x192.png',
-                    vibrate: [200, 100, 200],
+                    vibrate: [200, 100, 200], // Add haptic feedback
                 };
                 registration.showNotification('HydroPet Reminder', notificationOptions);
                 if (!force) {
@@ -67,8 +69,10 @@ export const useReminders = (
             // Check if we are within the user-defined reminder window
             const now = new Date();
             const currentHour = now.getHours();
-            if (currentHour < reminders.startHour || currentHour >= reminders.endHour) {
-                return;
+            if (reminders.startHour <= reminders.endHour) { // Same-day window
+                if (currentHour < reminders.startHour || currentHour >= reminders.endHour) return;
+            } else { // Overnight window
+                if (currentHour >= reminders.endHour && currentHour < reminders.startHour) return;
             }
 
             // Check if enough time has passed since the last drink
