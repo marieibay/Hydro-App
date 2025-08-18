@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import type { GameState, ShiftMode, ReminderSettings } from '../types';
 import { todayKey } from '../types';
@@ -158,7 +159,11 @@ const RemindersTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'onSaveReminder
                  <TabButton active={true} onClick={handleSave}>SAVE</TabButton>
                  <Hint>Status: <span className={statusColor}>{statusText}</span></Hint>
             </div>
-            <Hint className="mt-4">Reminders require notification permission to work when the app is closed. Otherwise, you'll see a retro toast at the top of the app.</Hint>
+            <Hint className="mt-4 leading-relaxed">
+                Granting permission allows system notifications.
+                <br />
+                <strong className="text-yellow-400">Important:</strong> For reminders to work, this app must be running (even in a background tab). If the app is fully closed, reminders cannot be sent.
+            </Hint>
         </div>
     );
 };
