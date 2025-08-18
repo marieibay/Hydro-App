@@ -76,11 +76,10 @@ const App: React.FC = () => {
                 if (typeof parsed.lastReminderTimestamp === 'undefined') parsed.lastReminderTimestamp = 0;
                 if (typeof parsed.goalRecommendation === 'undefined') parsed.goalRecommendation = null;
                 if (typeof parsed.settings.isMuted === 'undefined') parsed.settings.isMuted = false;
-                parsed.isCalculatingGoal = false; // Transient state
-
-
+                
                 // Ensure removed properties are gone
                 delete parsed.mouthBubs;
+                delete parsed.isCalculatingGoal;
                 
                 // On load, check if a rollover is needed immediately
                 const currentKey = getCurrentShiftKey(parsed.settings);
@@ -117,7 +116,6 @@ const App: React.FC = () => {
             notificationPermission: 'default',
             lastReminderTimestamp: 0,
             goalRecommendation: null,
-            isCalculatingGoal: false,
         };
     });
 
@@ -146,7 +144,6 @@ const App: React.FC = () => {
             const stateToSave = { ...gameState };
             // Don't save transient state
             delete stateToSave.followTimeoutId;
-            delete stateToSave.isCalculatingGoal;
             localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
         } catch (e) {
             console.error("Failed to save state to localStorage", e);

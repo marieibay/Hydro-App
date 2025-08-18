@@ -88,7 +88,6 @@ export interface GameState {
     notificationPermission: NotificationPermission | 'default';
     lastReminderTimestamp: number;
     goalRecommendation: string | null;
-    isCalculatingGoal?: boolean;
 }
 
 export const initialSettings: Settings = {

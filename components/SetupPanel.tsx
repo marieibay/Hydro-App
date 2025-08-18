@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import type { GameState, ShiftMode, ReminderSettings } from '../types';
 import { todayKey } from '../types';
-import { GoogleGenAI, Type } from '@google/genai';
 
 interface SetupPanelProps {
     onClose: () => void;
@@ -215,94 +214,68 @@ const GoalTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'sh
     const [age, setAge] = useState('');
     const [weight, setWeight] = useState('');
     const [activity, setActivity] = useState('moderate');
-    const isCalculating = gameState.isCalculatingGoal ?? false;
 
     const handleSave = () => {
         setGameState(prev => ({
             ...prev,
             goalBase: goal,
             settings: { ...prev.settings, useCustomGoal: useCustom },
-            celebratedToday: false,
+            celebratedToday: false, // Reset celebration status if goal changes
         }));
         showToast('Goal saved');
     };
     
-    const handleCalculate = async () => {
+    const handleCalculate = () => {
         const numAge = +age;
         const numWeight = +weight;
-        if (!numAge || numAge < 5 || numAge > 100) { 
-            setGameState(prev => ({ ...prev, goalRecommendation: "Enter valid age" }));
-            return; 
+
+        if (!numAge || numAge < 1 || numAge > 120) {
+            showToast("Please enter a valid age.");
+            return;
         }
-        if (!numWeight || numWeight < 50 || numWeight > 400) {
-            setGameState(prev => ({ ...prev, goalRecommendation: "Enter valid weight" }));
-            return; 
+        if (!numWeight || numWeight < 20 || numWeight > 500) {
+            showToast("Please enter a valid weight in lbs.");
+            return;
         }
         
-        setGameState(prev => ({ ...prev, isCalculatingGoal: true, goalRecommendation: "AI is calculating..." }));
-
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: `Based on this user data, calculate a recommended daily water intake in milliliters (ml). Age: ${numAge} years, Weight: ${numWeight} lbs, Activity Level: ${activity}. Provide a brief, one-sentence, encouraging reason for this recommendation. Round the final goal to the nearest 50ml.`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            goal: {
-                                type: Type.NUMBER,
-                                description: "The recommended daily water intake in milliliters."
-                            },
-                            reason: {
-                                type: Type.STRING,
-                                description: "A short, encouraging explanation for the recommended goal."
-                            }
-                        },
-                        required: ["goal", "reason"]
-                    },
-                },
-            });
-            
-            const jsonStr = response.text.trim();
-            const result = JSON.parse(jsonStr);
-
-            setGameState(prev => ({ 
-                ...prev, 
-                goalRecommendation: result.reason,
-                isCalculatingGoal: false,
-            }));
-            setGoal(result.goal);
-            setUseCustom(true);
-
-        } catch (error) {
-            console.error("Gemini API call failed:", error);
-            setGameState(prev => ({ 
-                ...prev, 
-                goalRecommendation: "Sorry, couldn't calculate. Please try again.",
-                isCalculatingGoal: false,
-            }));
+        // Standard formula: (Weight in lbs * 0.5 oz) + activity bonus
+        let baseOz = numWeight * 0.5;
+        
+        let activityOz = 0;
+        if (activity === 'moderate') {
+            activityOz = 20; // ~600ml
+        } else if (activity === 'active') {
+            activityOz = 40; // ~1200ml
         }
+
+        const totalOz = baseOz + activityOz;
+        const totalMl = totalOz * 29.5735; // Convert ounces to ml
+        
+        // Round to nearest 50ml for a cleaner number
+        const calculatedGoal = Math.round(totalMl / 50) * 50;
+
+        setGoal(calculatedGoal);
+        setUseCustom(true);
+        showToast(`Recommended goal: ${calculatedGoal} ml`);
     };
 
     return (
         <div>
-            <div className="text-sm text-[#a7c5f4] py-1">Goal Wizard (AI-Powered)</div>
-            <Row label="Age (years)"><input type="number" value={age} onChange={e=>setAge(e.target.value)} className={BaseInput} disabled={isCalculating} /></Row>
-            <Row label="Weight (lbs)"><input type="number" value={weight} onChange={e=>setWeight(e.target.value)} className={BaseInput} disabled={isCalculating} /></Row>
+            <div className="text-sm text-[#a7c5f4] py-1">Goal Wizard</div>
+            <Row label="Age (years)"><input type="number" value={age} onChange={e=>setAge(e.target.value)} className={BaseInput} /></Row>
+            <Row label="Weight (lbs)"><input type="number" value={weight} onChange={e=>setWeight(e.target.value)} className={BaseInput} /></Row>
             <Row label="Activity">
-                <select value={activity} onChange={e=>setActivity(e.target.value)} className={BaseInput} disabled={isCalculating}>
+                <select value={activity} onChange={e=>setActivity(e.target.value)} className={BaseInput}>
                     <option value="sedentary">Sedentary</option>
                     <option value="moderate">Moderate</option>
                     <option value="active">Active</option>
                 </select>
             </Row>
             <div className="flex items-center gap-2 my-3 flex-wrap">
-                 <TabButton active={true} onClick={handleCalculate} disabled={isCalculating}>
-                    {isCalculating ? 'CALCULATING...' : 'CALCULATE WITH AI'}
+                 <TabButton active={true} onClick={handleCalculate}>
+                    CALCULATE
                  </TabButton>
-                 <Hint>{gameState.goalRecommendation || ''}</Hint>
+                 <Hint>Uses a standard formula to suggest a goal.</Hint>
             </div>
             <hr className="border-none h-px bg-[#0e2d66] my-2" />
             <div className="flex items-center gap-2.5 my-3">
