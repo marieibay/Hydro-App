@@ -12,7 +12,7 @@ interface SetupPanelProps {
     onSaveReminders: (settings: ReminderSettings) => void;
 }
 
-type Tab = 'stats' | 'reminders' | 'mode' | 'goal';
+type Tab = 'stats' | 'reminders' | 'shift' | 'goal';
 
 const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode; className?: string, disabled?: boolean }> = ({ active, onClick, children, className, disabled }) => (
     <button
@@ -168,20 +168,20 @@ const RemindersTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'onSaveReminder
     );
 };
 
-// --- Mode Tab ---
-const ModeTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'showToast'>> = ({ gameState, setGameState, showToast }) => {
+// --- Shift Tab ---
+const ShiftTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'showToast'>> = ({ gameState, setGameState, showToast }) => {
     const [mode, setMode] = useState(gameState.settings.shiftMode);
     const [customWindow, setCustomWindow] = useState(gameState.settings.customWindow);
     const [cadence, setCadence] = useState(gameState.settings.cadenceMin);
 
     const handleSave = () => {
         setGameState(prev => ({ ...prev, settings: { ...prev.settings, shiftMode: mode, customWindow, cadenceMin: cadence } }));
-        showToast('Mode saved');
+        showToast('Shift settings saved');
     };
 
     return (
         <div>
-            <Row label="Shift Mode">
+            <Row label="Shift">
                 <select value={mode} onChange={e => setMode(e.target.value as ShiftMode)} className={BaseInput}>
                     <option value="day">Day (8–21h)</option>
                     <option value="night">Night (21–8h)</option>
@@ -207,7 +207,7 @@ const ModeTab: React.FC<Pick<SetupPanelProps, 'gameState' | 'setGameState' | 'sh
             <div className="mt-4">
                 <TabButton active={true} onClick={handleSave}>SAVE</TabButton>
             </div>
-            <Hint className="mt-4">Mode controls your <em>shift window</em> in case you hydrate overnight.</Hint>
+            <Hint className="mt-4">Shift controls your <em>shift window</em> in case you hydrate overnight.</Hint>
         </div>
     );
 };
@@ -309,7 +309,7 @@ export const SetupPanel: React.FC<SetupPanelProps> = (props) => {
                 <div className="flex gap-1.5 mb-2 flex-wrap">
                     <TabButton active={activeTab === 'stats'} onClick={() => setActiveTab('stats')}>STATS</TabButton>
                     <TabButton active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')}>REMINDERS</TabButton>
-                    <TabButton active={activeTab === 'mode'} onClick={() => setActiveTab('mode')}>MODE</TabButton>
+                    <TabButton active={activeTab === 'shift'} onClick={() => setActiveTab('shift')}>SHIFT</TabButton>
                     <TabButton active={activeTab === 'goal'} onClick={() => setActiveTab('goal')}>GOAL</TabButton>
                     <div className="flex-1 min-w-[10px]"></div>
                     <TabButton active={false} onClick={onClose}>CLOSE</TabButton>
@@ -317,7 +317,7 @@ export const SetupPanel: React.FC<SetupPanelProps> = (props) => {
                 <div className="mt-4">
                     {activeTab === 'stats' && <StatsTab gameState={gameState} />}
                     {activeTab === 'reminders' && <RemindersTab gameState={gameState} onSaveReminders={onSaveReminders} />}
-                    {activeTab === 'mode' && <ModeTab gameState={gameState} setGameState={setGameState} showToast={showToast} />}
+                    {activeTab === 'shift' && <ShiftTab gameState={gameState} setGameState={setGameState} showToast={showToast} />}
                     {activeTab === 'goal' && <GoalTab gameState={gameState} setGameState={setGameState} showToast={showToast} />}
                 </div>
             </div>

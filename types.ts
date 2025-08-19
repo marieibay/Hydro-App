@@ -97,7 +97,7 @@ export const initialSettings: Settings = {
         startHour: 8,
         endHour: 22
     },
-    shiftMode: 'custom',
+    shiftMode: 'day',
     customWindow: {
         start: '20:00',
         end: '07:00'

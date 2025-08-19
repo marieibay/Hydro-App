@@ -212,7 +212,7 @@ export function updateFishLogic(
         }
         newState.bubbles = newState.bubbles
             .map((b: Bubble) => ({ ...b, y: b.y - b.vy * dt }))
-            .filter((b: Bubble) => (b.y + b.r) > waterTopPx); // Remove bubble when its bottom edge reaches the water surface.
+            .filter((b: Bubble) => b.y > waterTopPx); // Remove bubble when its center has reached the water surface.
         
         // ----- FISH MOVEMENT: DYNAMIC SWIMMING -----
         const pad = 30;
@@ -285,6 +285,15 @@ export function updateFishLogic(
              const clampedVy = Math.max(-100, Math.min(100, fish.vy));
              targetRotation = (clampedVy / 100) * (Math.PI / 12); // Max tilt of 15 degrees
         }
+
+        // When facing left, the sprite is flipped, which mirrors the rotation.
+        // We must pre-emptively invert the rotation to compensate.
+        // This does not apply to the symmetrical front-facing view, which is not flipped.
+        const isFrontView = Math.abs(fish.facing) < 0.33;
+        if (fish.facing < 0 && !isFrontView) {
+            targetRotation *= -1;
+        }
+        
         // Smoothly interpolate rotation
         fish.rotation += (targetRotation - fish.rotation) * 0.1;
         

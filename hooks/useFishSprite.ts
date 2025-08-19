@@ -63,9 +63,9 @@ const makeSprite = (): { img: HTMLImageElement, fw: number, fh: number } => {
             rect(4, 14, 6, 17, orange, px, py); dot(4, 13, orange_light, px, py); dot(4, 18, orange_dark, px, py);
             
             // Outline
-            dot(8, 10, blue, px, py); dot(10, 10, blue, px, py); dot(12, 9, blue, px, py); dot(14, 9, blue, px, py); dot(16, 10, blue, px, py); dot(19, 10, blue, px, py);
+            dot(8, 10, blue, px, py); dot(10, 10, blue, px, py); dot(16, 10, blue, px, py); dot(19, 10, blue, px, py);
             rect(3, 13, 4, 18, blue_dark, px, py);
-            dot(7, 20, blue_dark, px, py); dot(9, 21, blue_dark, px, py); dot(12, 22, blue_dark, px, py); dot(15, 22, blue_dark, px, py); dot(18, 21, blue_dark, px, py);
+            dot(7, 20, blue_dark, px, py); dot(9, 21, blue_dark, px, py); dot(18, 21, blue_dark, px, py);
             
             // Eye
             rect(21, 13, 23, 15, eyeW, px, py); dot(22 + dx, 14 + dy, eyeB, px, py); dot(21, 13, eye_highlight, px, py);
@@ -90,9 +90,9 @@ const makeSprite = (): { img: HTMLImageElement, fw: number, fh: number } => {
             rect(8, 14, 9, 17, orange, px, py); dot(8, 13, orange_light, px, py); dot(8, 18, orange_dark, px, py);
             
             // Outline
-            dot(10, 10, blue, px, py); dot(12, 9, blue, px, py); dot(14, 9, blue, px, py); dot(16, 10, blue, px, py);
+            dot(10, 10, blue, px, py); dot(16, 10, blue, px, py);
             rect(7, 13, 8, 18, blue_dark, px, py);
-            dot(9, 20, blue_dark, px, py); dot(11, 21, blue_dark, px, py); dot(14, 22, blue_dark, px, py); dot(17, 21, blue_dark, px, py);
+            dot(9, 20, blue_dark, px, py); dot(11, 21, blue_dark, px, py); dot(17, 21, blue_dark, px, py);
             
             // Eye
             rect(19, 13, 21, 15, eyeW, px, py); dot(20 + dx, 14 + dy, eyeB, px, py); dot(19, 13, eye_highlight, px, py);
