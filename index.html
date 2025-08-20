@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>HydroPet</title>
     <!-- PWA & Mobile Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
@@ -18,6 +18,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       :root{ --cabinet:#0b1220; --panel:#0e1a2b; --screen:#0f2136; --blue-dark:#053b78; --border:#0b4fa6; --border2:#0e2d66; --glass:#bfe6ff; --white:#f7fafc; --orange:#f59e0b; --aqua:#5be7ff; --txt:#e8f0ff; --muted:#88a6d0; --maxw:420px; }
+      html {
+        overscroll-behavior-y: contain; /* Prevents pull-to-refresh and overscroll bounce */
+      }
       body {
         margin: 0;
         background-color: #0a0f1a;
@@ -30,6 +33,8 @@
         height: 100dvh; /* Use dynamic viewport height for better mobile support */
         overflow: hidden; /* Prevent body scrolling */
         padding: 14px;
+        touch-action: manipulation; /* Disable double-tap to zoom as a backup */
+        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
       }
       .font-press-start {
         font-family: "Press Start 2P", system-ui;
