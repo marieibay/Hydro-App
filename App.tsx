@@ -67,6 +67,7 @@ const App: React.FC = () => {
                 }
                 if (!parsed.foods) parsed.foods = [];
                 if (!parsed.ripples) parsed.ripples = [];
+                if (!parsed.bubbles) parsed.bubbles = []; // Ensure bubbles array exists
                 if (parsed.fish.target && typeof parsed.fish.target.isFood !== 'undefined') {
                     parsed.fish.target = null; // Clear old food targets on load
                 }

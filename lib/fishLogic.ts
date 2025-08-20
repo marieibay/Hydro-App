@@ -212,7 +212,7 @@ export function updateFishLogic(
         }
         newState.bubbles = newState.bubbles
             .map((b: Bubble) => ({ ...b, y: b.y - b.vy * dt }))
-            .filter((b: Bubble) => b.y > waterTopPx); // Remove bubble when its center has reached the water surface.
+            .filter((b: Bubble) => b.y + b.r > waterTopPx); // Remove bubble only after its bottom has passed the surface.
         
         // ----- FISH MOVEMENT: DYNAMIC SWIMMING -----
         const pad = 30;
