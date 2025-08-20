@@ -1,10 +1,28 @@
-const CACHE_NAME = 'hydropet-v1.8'; // Incremented cache version
+const CACHE_NAME = 'hydropet-v1.9'; // Incremented cache version
 // This list should be updated with all the files your app needs to run offline.
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg'
+  '/icon.svg',
+  '/index.tsx',
+  '/App.tsx',
+  '/types.ts',
+  '/components/Cabinet.tsx',
+  '/components/GameScreen.tsx',
+  '/components/Controls.tsx',
+  '/components/Meter.tsx',
+  '/components/SetupPanel.tsx',
+  '/components/DevTools.tsx',
+  '/components/Celebration.tsx',
+  '/components/OverGoal.tsx',
+  '/components/Toast.tsx',
+  '/hooks/useAudio.ts',
+  '/hooks/useFishSprite.ts',
+  '/hooks/useReminders.ts',
+  '/lib/drawing.ts',
+  '/lib/fishLogic.ts',
+  '/lib/haptics.ts'
 ];
 
 self.addEventListener('install', (event) => {
@@ -42,8 +60,8 @@ self.addEventListener('fetch', (event) => {
       const cachedResponse = await cache.match(event.request);
       
       const fetchedResponse = fetch(event.request).then((networkResponse) => {
-        // We only cache successful responses, and not from third-party scripts like esm.sh
-        if (networkResponse.status === 200 && !event.request.url.includes('esm.sh')) {
+        // We cache all successful responses, including from esm.sh for offline support.
+        if (networkResponse.status === 200) {
            cache.put(event.request, networkResponse.clone());
         }
         return networkResponse;

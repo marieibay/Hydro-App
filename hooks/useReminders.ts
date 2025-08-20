@@ -32,19 +32,6 @@ export const useReminders = (
     showToast: (message: string) => void
 ) => {
 
-    // 1. Register the standard service worker file
-    useEffect(() => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered with scope:', registration.scope);
-                })
-                .catch(err => {
-                    console.error('Service Worker registration failed:', err);
-                });
-        }
-    }, []);
-
     const sendReminder = useCallback((force = false) => {
         const reminderText = "Time for some water!";
         
